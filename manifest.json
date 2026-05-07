@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "ChatGPT Exporter",
+  "version": "1.0.0",
+  "description": "Export ChatGPT responses to HTML, PDF and DOCX.",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "src/state.js",
+        "src/utils.js",
+        "src/formulas.js",
+        "src/export-dom.js",
+        "src/html-export.js",
+        "src/zip.js",
+        "src/docx-templates.js",
+        "src/docx-export.js",
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*"
+  ]
+}

@@ -1,0 +1,44 @@
+[aria-label="Response actions"][role="group"]:has(.cgpt-export-ext-panel) {
+  pointer-events: auto !important;
+  mask-position: 0% 0% !important;
+}
+
+.cgpt-export-ext-panel {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: 0 0 auto !important;
+  gap: 2px !important;
+  pointer-events: auto !important;
+}
+
+.cgpt-export-ext-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 42px !important;
+  height: 32px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--text-secondary, currentColor) !important;
+  font: inherit !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  padding: 0 8px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  pointer-events: auto !important;
+}
+
+.cgpt-export-ext-button:hover {
+  background: var(--bg-secondary, rgba(127, 127, 127, 0.12)) !important;
+}
+
+.cgpt-export-ext-button:disabled {
+  cursor: default !important;
+  opacity: 0.65 !important;
+}
+
+.cgpt-export-ext-button:disabled:hover {
+  background: transparent !important;
+}
