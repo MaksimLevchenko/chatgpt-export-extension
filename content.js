@@ -89,8 +89,8 @@ async function runExport(content, type, button, label) {
   try {
     const title = getTitle();
     const clone = cloneForExport(content);
-    if (type === 'html') exportHtml(clone, title);
-    if (type === 'pdf') exportPdf(clone, title);
+    if (type === 'html') await exportHtml(clone, title);
+    if (type === 'pdf') await exportPdf(clone, title);
     if (type === 'docx') await exportDocx(clone, title);
     button.textContent = 'OK';
   } catch (error) {

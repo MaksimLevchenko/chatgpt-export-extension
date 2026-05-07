@@ -10,10 +10,15 @@
         "https://chat.openai.com/*"
       ],
       "js": [
+        "vendor/katex/katex.min.js",
         "src/state.js",
         "src/utils.js",
         "src/formulas.js",
+        "src/math-text.js",
+        "src/katex-export.js",
+        "src/math-omml.js",
         "src/export-dom.js",
+        "src/pdf-download.js",
         "src/html-export.js",
         "src/zip.js",
         "src/docx-templates.js",
@@ -29,5 +34,23 @@
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "pdf-viewer.html",
+        "vendor/katex/katex.min.css",
+        "vendor/katex/katex.min.js",
+        "vendor/katex/fonts/*",
+        "src/math-text.js",
+        "src/pdf-download.js",
+        "src/pdf-viewer.css",
+        "src/pdf-viewer.js"
+      ],
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ]
+    }
   ]
 }

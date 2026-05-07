@@ -18,11 +18,24 @@ function isVisible(node) {
 function getTitle() {
   const title = document.title.replace(/\s*[|–-]\s*ChatGPT.*$/i, '').trim();
   const value = title || `chatgpt-response-${state.fileCounter++}`;
-  return sanitizeFileName(value);
+  const name = sanitizeFileName(value, 95);
+  return sanitizeFileName(`${name} - ${formatFileTimestamp(new Date())}`);
 }
 
-function sanitizeFileName(value) {
-  return String(value || 'chatgpt-response').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 120) || 'chatgpt-response';
+function sanitizeFileName(value, maxLength = 120) {
+  return String(value || 'chatgpt-response').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, maxLength) || 'chatgpt-response';
+}
+
+function formatFileTimestamp(date) {
+  const pad = (value) => String(value).padStart(2, '0');
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate())
+  ].join('-') + ' ' + [
+    pad(date.getHours()),
+    pad(date.getMinutes())
+  ].join('-');
 }
 
 function downloadBlob(blob, filename) {

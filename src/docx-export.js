@@ -20,7 +20,7 @@ async function exportDocx(clone, title) {
 function buildDocumentXml(root) {
   const body = convertChildren(root, { list: [] });
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">
 <w:body>
 ${body || paragraphXml([runXml(root.textContent || '')])}
 <w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr>
@@ -57,9 +57,16 @@ function isIgnorable(node) {
 
 function isBlock(node) {
   if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
+  if (isCodeBlock(node)) return true;
   if (node.matches('p,pre,blockquote,ul,ol,li,table,thead,tbody,tfoot,tr,h1,h2,h3,h4,h5,h6,hr,section,article,main,figure,figcaption,details,summary,div.cgpt-export-formula-display')) return true;
   const display = window.getComputedStyle(node).display;
   return ['block', 'list-item', 'table', 'table-row-group', 'table-header-group', 'table-footer-group', 'table-row', 'flex', 'grid'].includes(display);
+}
+
+function isCodeBlock(node) {
+  if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
+  if (!node.matches('code') || node.closest('pre')) return false;
+  return /[\r\n]/.test(node.textContent || '') || Array.from(node.classList).some((name) => name.startsWith('language-'));
 }
 
 function isStructuredContainer(node) {
@@ -77,7 +84,7 @@ function blockXml(node, ctx) {
   if (tag === 'h3') return paragraphXml(inlineChildren(node, ctx, { bold: true }), { style: 'Heading3' });
   if (tag === 'h4' || tag === 'h5' || tag === 'h6') return paragraphXml(inlineChildren(node, ctx, { bold: true }), { style: 'Heading4' });
   if (tag === 'p') return paragraphXml(inlineChildren(node, ctx, {}));
-  if (tag === 'pre') return preXml(node);
+  if (tag === 'pre' || isCodeBlock(node)) return preXml(node);
   if (tag === 'blockquote') return blockquoteXml(node, ctx);
   if (tag === 'ul') return listXml(node, ctx, 'bullet');
   if (tag === 'ol') return listXml(node, ctx, 'decimal');
@@ -101,6 +108,7 @@ function inlineRuns(node, ctx, format) {
   if (node.nodeType !== Node.ELEMENT_NODE || isIgnorable(node)) return [];
   if (node.matches('[data-cgpt-formula="true"]')) return [equationRunXml(node.getAttribute('data-tex') || node.textContent || '', node.getAttribute('data-display') === 'true')];
   const tag = node.tagName.toLowerCase();
+  if (isCodeBlock(node)) return [runXml(getCodeText(node), { code: true })];
   const next = { ...format };
   if (tag === 'strong' || tag === 'b') next.bold = true;
   if (tag === 'em' || tag === 'i') next.italic = true;
@@ -117,9 +125,43 @@ function inlineRuns(node, ctx, format) {
 }
 
 function preXml(node) {
-  const text = (node.querySelector('code') || node).textContent || '';
+  const text = getCodeText(node);
   const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
   return lines.map((line) => paragraphXml([runXml(line || ' ', { code: true })], { style: 'CodeBlock' })).join('');
+}
+
+function getCodeText(node) {
+  const code = ((node && node.matches && node.matches('code') ? node : node && node.querySelector && node.querySelector('code')) || node);
+  const text = code.textContent || '';
+  if (/[\r\n]/.test(text)) return text;
+  return reconstructCodeText(code) || text;
+}
+
+function reconstructCodeText(node) {
+  if (!node || node.nodeType !== Node.ELEMENT_NODE) return '';
+  const brText = textWithBreaks(node);
+  if (/[\r\n]/.test(brText)) return brText;
+  const rootTextNodes = Array.from(node.childNodes).filter((child) => child.nodeType === Node.TEXT_NODE && child.textContent.replace(/\s+/g, '').length);
+  const elementChildren = Array.from(node.children).filter((child) => child.textContent && child.textContent.trim());
+  if (rootTextNodes.length || elementChildren.length < 2) return brText;
+  if (!looksLikeCodeLines(elementChildren)) return brText;
+  return elementChildren.map((child) => textWithBreaks(child).replace(/\n+$/g, '')).join('\n');
+}
+
+function looksLikeCodeLines(nodes) {
+  const values = nodes.map((node) => textWithBreaks(node));
+  const total = values.reduce((sum, value) => sum + value.length, 0);
+  if (total / values.length >= 8) return true;
+  return values.some((value) => /^\s+/.test(value) || /\s{2,}/.test(value));
+}
+
+function textWithBreaks(node) {
+  if (!node) return '';
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent || '';
+  if (node.nodeType !== Node.ELEMENT_NODE) return '';
+  const tag = node.tagName.toLowerCase();
+  if (tag === 'br') return '\n';
+  return Array.from(node.childNodes).map(textWithBreaks).join('');
 }
 
 function blockquoteXml(node, ctx) {
@@ -198,13 +240,23 @@ function runXml(text, format = {}) {
   if (format.underline) props.push('<w:u w:val="single"/>');
   if (format.strike) props.push('<w:strike/>');
   if (format.code) props.push('<w:rStyle w:val="CodeChar"/>');
+  if (format.math) props.push('<w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math" w:cs="Cambria Math"/>');
   if (format.superscript) props.push('<w:vertAlign w:val="superscript"/>');
   if (format.subscript) props.push('<w:vertAlign w:val="subscript"/>');
-  return `<w:r>${props.length ? `<w:rPr>${props.join('')}</w:rPr>` : ''}<w:t xml:space="preserve">${escapeXmlText(text)}</w:t></w:r>`;
+  return `<w:r>${props.length ? `<w:rPr>${props.join('')}</w:rPr>` : ''}${runTextXml(text)}</w:r>`;
+}
+
+function runTextXml(text) {
+  const lines = String(text == null ? '' : text).replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  return lines.map((line, index) => `${index ? '<w:br/>' : ''}<w:t xml:space="preserve">${escapeXmlText(line)}</w:t>`).join('');
 }
 
 function equationRunXml(tex, display) {
-  return runXml(display ? `$$${normalizeLatex(tex)}$$` : `\\(${normalizeLatex(tex)}\\)`, { code: true });
+  try {
+    return latexToOmml(tex, display);
+  } catch (error) {
+    return runXml(latexToReadableText(tex), { math: true });
+  }
 }
 
 function normalizeStructuredText(node) {

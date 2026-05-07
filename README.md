@@ -22,22 +22,29 @@ The buttons are inserted after Bad response and before More actions.
 
 ## Export behavior
 
-HTML uses standalone markup and re-renders formulas through KaTeX from stored TeX.
+HTML uses standalone markup and renders formulas through the bundled local KaTeX runtime. If KaTeX cannot render a formula, it falls back to readable mathematical text instead of raw delimiters.
 
-PDF opens a print-ready export page. Use Print / Save PDF.
+PDF opens a print-ready export page, renders formulas through the bundled local KaTeX runtime, then enables Print. Use Chrome's print dialog to print or choose Save as PDF.
 
-DOCX is generated locally in the browser without external libraries. Formulas are preserved as readable TeX text to avoid hangs on complex LaTeX.
+DOCX is generated locally in the browser. Formulas are converted from TeX through KaTeX MathML into native Word equation markup when possible; unsupported formulas fall back to readable mathematical text.
 
 ## Files
 
 - `manifest.json`
+- `pdf-viewer.html`
+- `vendor/katex/`
 - `content.js`
 - `content.css`
 - `src/state.js`
 - `src/utils.js`
 - `src/formulas.js`
+- `src/math-text.js`
+- `src/katex-export.js`
+- `src/math-omml.js`
 - `src/export-dom.js`
 - `src/html-export.js`
+- `src/pdf-viewer.css`
+- `src/pdf-viewer.js`
 - `src/zip.js`
 - `src/docx-templates.js`
 - `src/docx-export.js`
