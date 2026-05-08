@@ -3,8 +3,10 @@
 function cloneForExport(content) {
   const clone = content.cloneNode(true);
   replaceFormulasWithPlaceholders(clone);
-  replaceCheckboxesWithText(clone);
   removeUiElements(clone);
+  removeUiCheckboxes(clone);
+  removeUiTextArtifacts(clone);
+  replaceCheckboxesWithText(clone);
   normalizeExportDom(clone);
   return clone;
 }
@@ -31,9 +33,50 @@ function removeUiElements(root) {
     '[class*="copy"]',
     '[class*="clipboard"]',
     '[contenteditable="true"]',
-    '.cgpt-export-ext-panel'
+    '.cgpt-export-ext-panel',
+    '.cgpt-export-ext-share-panel',
+    '.tm-chatgpt-status',
+    '.tm-chatgpt-turn-unpin',
+    '[data-tm-turn-unpin="1"]'
   ];
   for (const node of Array.from(root.querySelectorAll(selectors.join(',')))) node.remove();
+}
+
+function removeUiCheckboxes(root) {
+  for (const checkbox of Array.from(root.querySelectorAll('input[type="checkbox"]'))) {
+    if (isContentCheckbox(checkbox)) continue;
+    const label = checkbox.closest('label');
+    const removable = label && normalizeText(label.textContent).length <= 12 ? label : checkbox;
+    removable.remove();
+  }
+}
+
+function isContentCheckbox(checkbox) {
+  if (!checkbox || checkbox.nodeType !== Node.ELEMENT_NODE) return false;
+  if (checkbox.closest('li')) return true;
+  const container = checkbox.closest('.markdown, [class*="markdown"]');
+  return Boolean(container && normalizeText(container.textContent));
+}
+
+function removeUiTextArtifacts(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const node of nodes) {
+    const next = removeUiTextArtifactValue(node.textContent);
+    if (!normalizeText(next)) {
+      node.remove();
+    } else if (next !== node.textContent) {
+      node.textContent = next;
+    }
+  }
+}
+
+function removeUiTextArtifactValue(value) {
+  return String(value || '')
+    .replace(/Show\s+more\s*Show\s+less/g, '')
+    .replace(/Show\s+more/g, '')
+    .replace(/Show\s+less/g, '');
 }
 
 function normalizeExportDom(root) {

@@ -1,6 +1,6 @@
 # ChatGPT Exporter
 
-Chrome/Chromium Manifest V3 extension for exporting individual ChatGPT responses to HTML, PDF and DOCX.
+Chrome/Chromium Manifest V3 extension for exporting individual ChatGPT responses or a full ChatGPT conversation to HTML, PDF and DOCX.
 
 ## Install locally
 
@@ -19,6 +19,8 @@ Open a ChatGPT conversation. Each assistant response should show three buttons i
 - DOCX
 
 The buttons are inserted after Bad response and before More actions.
+
+The conversation header should also show export buttons next to Share. These buttons attempt to scroll up and load earlier messages before exporting the full conversation that is available in the page DOM.
 
 ## Export behavior
 
